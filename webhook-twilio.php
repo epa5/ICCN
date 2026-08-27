@@ -14,6 +14,7 @@ if (str_starts_with($corps, '💬')) {
 }
 // On ignore les messages entrants d'un numero inconnu (seulement le proprio repond)
 $numeroProprio = getenv('TWILIO_WHATSAPP_TO');
+if (empty($numeroProprio)) $numeroProprio = '243971127831';
 if ($numeroProprio) {
     $whitespace = [''];
     $numeroAttendu = 'whatsapp:' . $numeroProprio;

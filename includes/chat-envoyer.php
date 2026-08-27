@@ -20,7 +20,8 @@ $stmt->execute([$session, $texte]);
 $sid   = getenv('TWILIO_ACCOUNT_SID');
 $token = getenv('TWILIO_AUTH_TOKEN');
 $de    = getenv('TWILIO_WHATSAPP_FROM');    // ex: whatsapp:+14155238886
-$vers  = getenv('TWILIO_WHATSAPP_TO');      // ex: whatsapp:+243812345678
+$vers  = getenv('TWILIO_WHATSAPP_TO');      // ex: whatsapp:+243971127831
+if (empty($vers)) $vers = 'whatsapp:+243971127831';
 
 $envoye = false;
 if ($sid && $token && $de && $vers) {
