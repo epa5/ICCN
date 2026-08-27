@@ -54,6 +54,65 @@ require '../includes/header.php';
     </div>
 </section>
 
+<section class="section-meteo">
+    <style>
+        .meteo-carte {
+            max-width: 1100px; margin: 0 auto; padding: 32px;
+            background: linear-gradient(135deg, #0b3d2e 0%, #14532d 100%);
+            border-radius: 18px; color: #fff; text-align: center;
+        }
+        .meteo-titre { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: #d4af37; margin-bottom: 6px; }
+        .meteo-ville { font-size: 24px; font-weight: 700; margin-bottom: 20px; }
+        .meteo-grille { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; }
+        .meteo-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .meteo-item i { font-size: 26px; color: #d4af37; }
+        .meteo-valeur { font-size: 28px; font-weight: 800; }
+        .meteo-label { font-size: 12px; opacity: .75; letter-spacing: 1px; text-transform: uppercase; }
+    </style>
+    <div class="meteo-carte">
+        <p class="meteo-titre">Météo en direct · Région du Parc</p>
+        <p class="meteo-ville"><i class="fa-solid fa-location-dot"></i> Goma / Virunga</p>
+        <div class="meteo-grille" id="meteo-grille">
+            <div class="meteo-item"><i class="fa-solid fa-spinner fa-spin"></i><span class="meteo-label">Chargement…</span></div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        var url = 'https://api.open-meteo.com/v1/forecast?latitude=-1.6836&longitude=29.2244'
+            + '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=Africa%2FLagos';
+        var libelles = {
+            0:['Ciel dégagé','fa-sun'], 1:['Peu nuageux','fa-cloud-sun'], 2:['Partiellement nuageux','fa-cloud-sun'],
+            3:['Couvert','fa-cloud'], 45:['Brouillard','fa-smog'], 48:['Brouillard givrant','fa-smog'],
+            51:['Bruine légère','fa-cloud-rain'], 53:['Bruine','fa-cloud-rain'], 55:['Bruine forte','fa-cloud-showers-heavy'],
+            61:['Pluie faible','fa-cloud-rain'], 63:['Pluie modérée','fa-cloud-rain'], 65:['Pluie forte','fa-cloud-showers-heavy'],
+            71:['Neige faible','fa-snowflake'], 73:['Neige','fa-snowflake'], 75:['Neige forte','fa-snowflake'],
+            80:['Averses faibles','fa-cloud-rain'], 81:['Averses','fa-cloud-showers-heavy'], 82:['Averses violentes','fa-cloud-showers-heavy'],
+            95:['Orage','fa-bolt'], 96:['Orage grêle','fa-bolt'], 99:['Orage fort grêle','fa-bolt']
+        };
+        fetch(url)
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                var c = d.current;
+                var info = libelles[c.weather_code] || ['Variable','fa-cloud'];
+                document.getElementById('meteo-grille').innerHTML =
+                    '<div class="meteo-item"><i class="fa-solid ' + info[1] + '"></i>' +
+                    '<span class="meteo-valeur">' + Math.round(c.temperature_2m) + '°C</span>' +
+                    '<span class="meteo-label">' + info[0] + '</span></div>' +
+                    '<div class="meteo-item"><i class="fa-solid fa-droplet"></i>' +
+                    '<span class="meteo-valeur">' + c.relative_humidity_2m + '%</span>' +
+                    '<span class="meteo-label">Humidité</span></div>' +
+                    '<div class="meteo-item"><i class="fa-solid fa-wind"></i>' +
+                    '<span class="meteo-valeur">' + Math.round(c.wind_speed_10m) + ' km/h</span>' +
+                    '<span class="meteo-label">Vent</span></div>';
+            })
+            .catch(function () {
+                document.getElementById('meteo-grille').innerHTML =
+                    '<span class="meteo-label">Météo momentanément indisponible</span>';
+            });
+    })();
+    </script>
+</section>
+
 <section class="section-highlights">
     <p class="eyebrow">Merveilles du Virunga</p>
     <h2 class="titre-highlights">Un parc,<br><em>mille visages</em></h2>
