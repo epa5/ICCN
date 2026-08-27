@@ -70,7 +70,7 @@ require '../includes/header.php';
         .meteo-label { font-size: 12px; opacity: .75; letter-spacing: 1px; text-transform: uppercase; }
     </style>
     <div class="meteo-carte">
-        <p class="meteo-titre">Météo en direct · Région du Parc</p>
+        <p class="meteo-titre">Météo de la région du Parc</p>
         <p class="meteo-ville"><i class="fa-solid fa-location-dot"></i> Goma / Virunga</p>
         <div class="meteo-grille" id="meteo-grille">
             <div class="meteo-item"><i class="fa-solid fa-spinner fa-spin"></i><span class="meteo-label">Chargement…</span></div>
