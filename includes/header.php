@@ -36,8 +36,8 @@ if (!isset($page_actuelle)) {
                 <li><a href="dashboard.php" class="<?php echo ($page_actuelle == 'dashboard.php') ? 'actif' : ''; ?>">Accueil</a></li>
                 <li><a href="a-propos.php" class="<?php echo ($page_actuelle == 'a-propos.php') ? 'actif' : ''; ?>">À propos</a></li>
                 <li><a href="faune-flore.php" class="<?php echo ($page_actuelle == 'faune-flore.php') ? 'actif' : ''; ?>">Faune</a></li>
-                <li><a href="attractions.php#nyiragongo" class="<?php echo ($page_actuelle == 'attractions.php') ? 'actif' : ''; ?>">Nyiragongo</a></li>
-                <li><a href="attractions.php#rwenzori">Rwenzori</a></li>
+                <li><a href="nyiragongo.php" class="<?php echo ($page_actuelle == 'nyiragongo.php') ? 'actif' : ''; ?>">Nyiragongo</a></li>
+                <li><a href="rwenzori.php" class="<?php echo ($page_actuelle == 'rwenzori.php') ? 'actif' : ''; ?>">Rwenzori</a></li>
                 <li><a href="galerie.php" class="<?php echo ($page_actuelle == 'galerie.php') ? 'actif' : ''; ?>">Galerie</a></li>
                 <li><a href="carte.php" class="<?php echo ($page_actuelle == 'carte.php') ? 'actif' : ''; ?>">Carte</a></li>
                 <li><a href="contact.php" class="<?php echo ($page_actuelle == 'contact.php') ? 'actif' : ''; ?>">Contact</a></li>

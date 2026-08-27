@@ -34,15 +34,15 @@
                     <li><a href="a-propos.php">À Propos</a></li>
                     <li><a href="faune-flore.php">Faune &amp; Flore</a></li>
                     <li><a href="galerie.php">Galerie</a></li>
-                    <li><a href="attractions.php">Carte du Parc</a></li>
+                    <li><a href="nyiragongo.php">Carte du Parc</a></li>
                 </ul>
             </div>
 
             <div class="footer-colonne">
                 <h3>Attractions</h3>
                 <ul>
-                    <li><a href="attractions.php">Volcan Nyiragongo</a></li>
-                    <li><a href="attractions.php">Monts Rwenzori</a></li>
+                    <li><a href="nyiragongo.php">Volcan Nyiragongo</a></li>
+                    <li><a href="rwenzori.php">Monts Rwenzori</a></li>
                     <li><a href="faune-flore.php">Gorilles des Montagnes</a></li>
                     <li><a href="faune-flore.php">Okapis</a></li>
                 </ul>
@@ -64,6 +64,9 @@
             <p>&copy; <?php echo date("Y"); ?> Parc National des Virunga — Géré par l'ICCN. Tous droits réservés.</p>
         </div>
     </footer>
+
+    <!-- Chat integre relie a WhatsApp (Twilio) -->
+    <?php require_once __DIR__ . '/chat-widget.php'; ?>
 
     <script src="../assets/js/menu.js"></script>
 </body>

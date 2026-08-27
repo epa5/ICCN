@@ -2,7 +2,7 @@
 session_start();
 $racine = '../';
 $titre_page = "Nyiragongo";
-$page_actuelle = 'attractions.php';
+$page_actuelle = 'nyiragongo.php';
 require '../includes/header.php';
 ?>
 

@@ -2,7 +2,7 @@
 session_start();
 $racine = '../';
 $titre_page = "Rwenzori";
-$page_actuelle = 'attractions.php';
+$page_actuelle = 'rwenzori.php';
 require '../includes/header.php';
 ?>
 
@@ -227,7 +227,7 @@ require '../includes/header.php';
     </p>
     <div class="boutons-cta-finale">
         <a href="contact.php" class="bouton-dore-plein">Planifier l'Ascension <i class="fa-solid fa-arrow-right"></i></a>
-        <a href="attractions.php" class="bouton-contour-clair">Retour aux Attractions</a>
+        <a href="rwenzori.php" class="bouton-contour-clair">Retour aux Attractions</a>
     </div>
 </section>
 
