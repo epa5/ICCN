@@ -41,6 +41,7 @@ if (!isset($page_actuelle)) {
                 <li><a href="galerie.php" class="<?php echo ($page_actuelle == 'galerie.php') ? 'actif' : ''; ?>">Galerie</a></li>
                 <li><a href="carte.php" class="<?php echo ($page_actuelle == 'carte.php') ? 'actif' : ''; ?>">Carte</a></li>
                 <li><a href="contact.php" class="<?php echo ($page_actuelle == 'contact.php') ? 'actif' : ''; ?>">Contact</a></li>
+                <li><a href="don.php" class="<?php echo ($page_actuelle == 'don.php') ? 'actif' : ''; ?>">Faire un don</a></li>
             </ul>
         </nav>
 
