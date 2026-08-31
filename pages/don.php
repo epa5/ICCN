@@ -310,7 +310,7 @@ require '../includes/header.php';
 
         var paysOptions = etat.countries.map(function (c) {
             return '<option value="' + avecEchappement(c.cca2) + '"' + (etat.country === c.cca2 ? " selected" : "") + '>' +
-                avecEchappement(c.flag + " " + c.name.common) + '</option>';
+                avecEchappement(c.name.common) + '</option>';
         }).join("");
 
         var devisesHtml = ["USD", "EUR", "GBP", "CDF"].map(function (k) {
@@ -440,10 +440,12 @@ require '../includes/header.php';
         }
     }
 
-    fetch("https://restcountries.com/v3.1/all?fields=name,cca2,flag")
+    fetch("https://countriesnow.space/api/v0.1/countries/flag/images")
         .then(function (r) { return r.json(); })
-        .then(function (data) {
-            etat.countries = data.sort(function (a, b) { return a.name.common.localeCompare(b.name.common); });
+        .then(function (res) {
+            etat.countries = (res && res.data || []).map(function (c) {
+                return { name: { common: c.name }, cca2: c.iso2, flag: c.flag };
+            }).sort(function (a, b) { return a.name.common.localeCompare(b.name.common); });
             etat.loadingCountries = false;
             rendre();
         })
