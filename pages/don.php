@@ -446,12 +446,29 @@ require '../includes/header.php';
         return (s || "").toLowerCase().replace(/[.,]/g, "").replace(/\s+/g, " ").trim();
     }
 
+    function cleCanonique(s) {
+        var stop = { "the": 1, "of": 1, "and": 1, "is": 1, "in": 1, "do": 1, "da": 1, "de": 1 };
+        var mots = (s || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/);
+        return mots.filter(function (m) { return m && !stop[m]; }).sort().join(" ");
+    }
+
+    function fetchAvecTimeout(url, ms) {
+        var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+        var t = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms);
+        return fetch(url, { signal: ctrl ? ctrl.signal : undefined })
+            .then(function (res) { return res.json(); })
+            .then(function (json) { clearTimeout(t); return json; });
+    }
+
     function chargerUniversites(nomPays) {
         etat.loadingUniversities = true;
         etat.universities = [];
         rendre();
-        fetch(UNIV_HIPOLABS + encodeURIComponent(nomPays))
-            .then(function (r) { return r.json(); })
+        if (UNIV_LOADED) {
+            remplirDepuisMiroir(nomPays);
+            return;
+        }
+        fetchAvecTimeout(UNIV_HIPOLABS + encodeURIComponent(nomPays), 6000)
             .then(function (data) {
                 var liste = (data || []).map(function (u) { return u.name; })
                     .filter(Boolean).sort(function (a, b) { return a.localeCompare(b); });
@@ -472,10 +489,10 @@ require '../includes/header.php';
             remplirDepuisMiroir(nomPays);
             return;
         }
-        fetch(UNIV_MIRROR)
-            .then(function (r) { return r.json(); })
+        fetchAvecTimeout(UNIV_MIRROR, 25000)
             .then(function (data) {
                 UNIV_LOADED = true;
+                UNIV_PAYS = {};
                 (data || []).forEach(function (u) {
                     var c = u.country || "Unknown";
                     (UNIV_PAYS[c] = UNIV_PAYS[c] || []).push(u.name);
@@ -485,17 +502,32 @@ require '../includes/header.php';
             .catch(function () { etat.loadingUniversities = false; rendre(); });
     }
 
+    function prechargerUniversites() {
+        if (UNIV_LOADED || Object.keys(UNIV_PAYS).length) return;
+        fetchAvecTimeout(UNIV_MIRROR, 30000)
+            .then(function (data) {
+                UNIV_LOADED = true;
+                var pa = {};
+                (data || []).forEach(function (u) {
+                    var c = u.country || "Unknown";
+                    (pa[c] = pa[c] || []).push(u.name);
+                });
+                UNIV_PAYS = pa;
+            })
+            .catch(function () {});
+    }
+
     function remplirDepuisMiroir(nomPays) {
-        var k = normaliserAPI(nomPays);
-        var cle = null;
+        var kc = cleCanonique(nomPays);
         var cles = Object.keys(UNIV_PAYS);
-        for (var i = 0; i < cles.length; i++) {
-            if (normaliserAPI(cles[i]) === k) { cle = cles[i]; break; }
+        var cle = null, i;
+        for (i = 0; i < cles.length; i++) {
+            if (cleCanonique(cles[i]) === kc) { cle = cles[i]; break; }
         }
         if (!cle) {
-            for (var j = 0; j < cles.length; j++) {
-                var cj = normaliserAPI(cles[j]);
-                if (cj.indexOf(k) !== -1 || k.indexOf(cj) !== -1) { cle = cles[j]; break; }
+            for (i = 0; i < cles.length; i++) {
+                var ci = cleCanonique(cles[i]);
+                if (kc.length >= 3 && (ci.indexOf(kc) !== -1 || kc.indexOf(ci) !== -1)) { cle = cles[i]; break; }
             }
         }
         etat.universities = (UNIV_PAYS[cle] || []).filter(Boolean).sort()
@@ -576,6 +608,7 @@ require '../includes/header.php';
         })
         .catch(function () { etat.loadingCountries = false; rendre(); });
 
+    setTimeout(prechargerUniversites, 1500);
     rendre();
 })();
 </script>
