@@ -240,9 +240,10 @@ require '../includes/header.php';
 
     var etat = {
         amount: 50, customAmount: "", isCustom: false, cause: "gorilla", currency: "USD",
-        firstName: "", lastName: "", email: "", country: "", phone: "",
-        anonymous: false, recurring: false, message: "",
-        etape: "form", erreur: "", countries: [], loadingCountries: true
+        firstName: "", lastName: "", email: "", country: "", countryName: "", university: "",
+        phone: "", anonymous: false, recurring: false, message: "",
+        etape: "form", erreur: "", countries: [], loadingCountries: true,
+        universities: [], loadingUniversities: false
     };
 
     var CARD_STYLE = {
@@ -313,6 +314,11 @@ require '../includes/header.php';
                 avecEchappement(c.name.common) + '</option>';
         }).join("");
 
+        var universitesOptions = etat.universities.map(function (u) {
+            return '<option value="' + avecEchappement(u.name) + '"' + (etat.university === u.name ? " selected" : "") + '>' +
+                avecEchappement(u.name) + '</option>';
+        }).join("");
+
         var devisesHtml = ["USD", "EUR", "GBP", "CDF"].map(function (k) {
             return '<option value="' + k + '"' + (etat.currency === k ? " selected" : "") + '>' + k + " " + DEVISE[k] + '</option>';
         }).join("");
@@ -365,6 +371,11 @@ require '../includes/header.php';
             '      <option value="">' + (etat.loadingCountries ? "Chargement des pays..." : "Sélectionnez votre pays") + '</option>' +
             paysOptions +
             '    </select></div>' +
+            '  <div class="don-bloc-champ pleine-largeur"><label>Université' + (etat.country ? ' <span class="etoile">*</span>' : '') + '</label>' +
+            '    <select class="don-select-pays" onchange="donSetChamp(\'university\', this.value)">' +
+            '      <option value="">' + (etat.universityHint()) + '</option>' +
+            universitesOptions +
+            '    </select></div>' +
             '  <div class="don-bloc-champ pleine-largeur"><label>Message (optionnel)</label>' +
             '    <textarea class="don-champ-texte" rows="3" placeholder="Laissez un message d\'encouragement..." oninput="donSetChamp(\'message\', this.value)">' + avecEchappement(etat.message) + '</textarea></div>' +
             '</div>' +
@@ -401,16 +412,58 @@ require '../includes/header.php';
     window.donSetDevise = function (v) { etat.currency = v; rendre(); };
     window.donToggleRecurrent = function () { etat.recurring = !etat.recurring; rendre(); };
     window.donToggleAnonyme = function (v) { etat.anonymous = v; if (v) { etat.firstName = ""; etat.lastName = ""; } rendre(); };
-    window.donSetChamp = function (champ, v) { etat[champ] = v; };
+    function nomPaysPourCode(code) {
+        var p = etat.countries.filter(function (c) { return c.cca2 === code; })[0];
+        return p ? p.name.common : "";
+    }
+    etat.universityHint = function () {
+        if (etat.loadingUniversities) return "Chargement des universités...";
+        if (!etat.country) return "Sélectionnez d'abord un pays";
+        if (!etat.universities.length) return "Aucune université trouvée";
+        return "Sélectionnez votre université";
+    };
+    window.donSetChamp = function (champ, v) {
+        etat[champ] = v;
+        if (champ === "country") {
+            etat.countryName = nomPaysPourCode(v);
+            etat.university = "";
+            etat.universities = [];
+            if (v) {
+                chargerUniversites(etat.countryName);
+            } else {
+                etat.loadingUniversities = false;
+                rendre();
+            }
+        }
+    };
+
+    function chargerUniversites(nomPays) {
+        etat.loadingUniversities = true;
+        etat.universities = [];
+        rendre();
+        fetch("https://universities.hipolabs.com/search?country=" + encodeURIComponent(nomPays))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                etat.universities = (data || []).map(function (u) {
+                    return { name: u.name };
+                }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+                etat.loadingUniversities = false;
+                rendre();
+            })
+            .catch(function () { etat.loadingUniversities = false; rendre(); });
+    }
     window.donReinit = function () {
         etat.etape = "form"; etat.erreur = "";
         rendre();
     };
 
+    var SHEET_URL = "https://script.google.com/macros/s/AKfycbwWZcJcsT-kL627yKrj234JacDl-hhAFFYpAXvrjHgIg-lx4c6XCDsX-0WIPBGIDxVD/exec";
+
     async function donSoumettre() {
         if (finalAmount() < 1) { etat.erreur = "Le montant minimum est 1 " + etat.currency + "."; rendre(); return; }
-        if (!etat.email || !etat.country) { etat.erreur = "Veuillez remplir tous les champs obligatoires."; rendre(); return; }
+        if (!etat.email || !etat.country || !etat.university) { etat.erreur = "Veuillez remplir tous les champs obligatoires."; rendre(); return; }
         etat.etape = "processing"; etat.erreur = ""; rendre();
+        enregistrerDon();
         try {
             var res = await stripe.createPaymentMethod({
                 type: "card",
@@ -438,6 +491,27 @@ require '../includes/header.php';
         } catch (err) {
             etat.etape = "error"; etat.erreur = err.message || "Une erreur est survenue."; rendre();
         }
+    }
+
+    function enregistrerDon() {
+        var corps = {
+            firstName: etat.firstName,
+            lastName: etat.lastName,
+            email: etat.email,
+            phone: etat.phone,
+            country: etat.countryName || etat.country,
+            university: etat.university,
+            message: etat.message,
+            amount: finalAmount(),
+            currency: etat.currency,
+            cause: causeLabel()
+        };
+        fetch(SHEET_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify(corps),
+            headers: { "Content-Type": "text/plain;charset=utf-8" }
+        }).catch(function () {});
     }
 
     fetch("https://countriesnow.space/api/v0.1/countries/flag/images")
