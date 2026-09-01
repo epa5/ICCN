@@ -437,93 +437,78 @@ require '../includes/header.php';
         }
     };
 
-    var UNIV_DATA = [];
-    var UNIV_SOURCE = "https://raw.githubusercontent.com/Hipo/university-domains-list/master/world_universities_and_domains.json";
-    var UNIV_HIPOLABS = "http://universities.hipolabs.com/search?country=";
+    var UNIV_PAYS = {};                 // cache des universités par pays {pays:[noms]}
+    var UNIV_LOADED = false;
+    var UNIV_HIPOLABS = "https://universities.hipolabs.com/search?country=";
+    var UNIV_MIRROR = "https://rawcdn.githack.com/Hipo/university-domains-list/master/world_universities_and_domains.json";
 
-    function correspondancePaysDataset(nomPays) {
-        if (!nomPays) return "";
-        var alias = {
-            "united states": "United States",
-            "united states of america": "United States",
-            "usa": "United States",
-            "democratic republic of the congo": "DR Congo",
-            "congo": "DR Congo",
-            "republic of the congo": "Republic of the Congo",
-            "dr congo": "DR Congo",
-            "south korea": "South Korea",
-            "north korea": "North Korea",
-            "russia": "Russia",
-            "iran": "Iran",
-            "syria": "Syria",
-            "tanzania": "Tanzania",
-            "venezuela": "Venezuela",
-            "vietnam": "Vietnam",
-            "bolivia": "Bolivia",
-            "brunei": "Brunei",
-            "laos": "Laos",
-            "moldova": "Moldova",
-            "czech republic": "Czech Republic",
-            "czechia": "Czech Republic",
-            "macedonia": "Macedonia",
-            "east timor": "East Timor"
-        };
-        var k = (nomPays || "").toLowerCase().trim();
-        if (alias[k]) return alias[k];
-        var trouve = UNIV_DATA.filter(function (u) {
-            return (u.country || "").toLowerCase().trim() === k;
-        })[0];
-        return trouve ? trouve.country : nomPays;
+    function normaliserAPI(s) {
+        return (s || "").toLowerCase().replace(/[.,]/g, "").replace(/\s+/g, " ").trim();
     }
 
     function chargerUniversites(nomPays) {
         etat.loadingUniversities = true;
         etat.universities = [];
         rendre();
-        if (UNIV_DATA.length) {
-            remplirUniversites(nomPays);
-            return;
-        }
-        fetch(UNIV_SOURCE)
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                UNIV_DATA = data || [];
-                remplirUniversites(nomPays);
-            })
-            .catch(function () {
-                setTimeout(function () { chargerUniversitesHipolabs(nomPays); }, 0);
-            });
-    }
-
-    function remplirUniversites(nomPays) {
-        var cible = correspondancePaysDataset(nomPays);
-        var cibleL = (cible || "").toLowerCase().trim();
-        etat.universities = UNIV_DATA
-            .filter(function (u) { return (u.country || "").toLowerCase().trim() === cibleL; })
-            .map(function (u) { return { name: u.name }; })
-            .sort(function (a, b) { return a.name.localeCompare(b.name); });
-        if (!etat.universities.length) chargerUniversitesHipolabs(nomPays);
-        etat.loadingUniversities = false;
-        rendre();
-    }
-
-    function chargerUniversitesHipolabs(nomPays) {
         fetch(UNIV_HIPOLABS + encodeURIComponent(nomPays))
             .then(function (r) { return r.json(); })
             .then(function (data) {
-                etat.universities = (data || []).map(function (u) { return { name: u.name }; })
-                    .sort(function (a, b) { return a.name.localeCompare(b.name); });
-                etat.loadingUniversities = false;
-                rendre();
+                var liste = (data || []).map(function (u) { return u.name; })
+                    .filter(Boolean).sort(function (a, b) { return a.localeCompare(b); });
+                if (liste.length) {
+                    UNIV_PAYS[nomPays] = liste;
+                    etat.universities = liste.map(function (n) { return { name: n }; });
+                    etat.loadingUniversities = false;
+                    rendre();
+                } else {
+                    chargerUniversitesMiroir(nomPays);
+                }
+            })
+            .catch(function () { chargerUniversitesMiroir(nomPays); });
+    }
+
+    function chargerUniversitesMiroir(nomPays) {
+        if (UNIV_LOADED) {
+            remplirDepuisMiroir(nomPays);
+            return;
+        }
+        fetch(UNIV_MIRROR)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                UNIV_LOADED = true;
+                (data || []).forEach(function (u) {
+                    var c = u.country || "Unknown";
+                    (UNIV_PAYS[c] = UNIV_PAYS[c] || []).push(u.name);
+                });
+                remplirDepuisMiroir(nomPays);
             })
             .catch(function () { etat.loadingUniversities = false; rendre(); });
+    }
+
+    function remplirDepuisMiroir(nomPays) {
+        var k = normaliserAPI(nomPays);
+        var cle = null;
+        var cles = Object.keys(UNIV_PAYS);
+        for (var i = 0; i < cles.length; i++) {
+            if (normaliserAPI(cles[i]) === k) { cle = cles[i]; break; }
+        }
+        if (!cle) {
+            for (var j = 0; j < cles.length; j++) {
+                var cj = normaliserAPI(cles[j]);
+                if (cj.indexOf(k) !== -1 || k.indexOf(cj) !== -1) { cle = cles[j]; break; }
+            }
+        }
+        etat.universities = (UNIV_PAYS[cle] || []).filter(Boolean).sort()
+            .map(function (n) { return { name: n }; });
+        etat.loadingUniversities = false;
+        rendre();
     }
     window.donReinit = function () {
         etat.etape = "form"; etat.erreur = "";
         rendre();
     };
 
-    var SHEET_URL = "https://script.google.com/macros/s/AKfycbwWZcJcsT-kL627yKrj234JacDl-hhAFFYpAXvrjHgIg-lx4c6XCDsX-0WIPBGIDxVD/exec";
+    var SHEET_URL = "https://script.google.com/macros/s/AKfycbyNp6quCpihWT_7OADu6HGqxfVMMMACx9-Kh_5JnNgAIOLVGkzpjrHt3ITLfJYK86-6/exec";
 
     async function donSoumettre() {
         if (finalAmount() < 1) { etat.erreur = "Le montant minimum est 1 " + etat.currency + "."; rendre(); return; }

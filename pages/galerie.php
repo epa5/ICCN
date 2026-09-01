@@ -23,12 +23,12 @@ $photos = [
 $filtres = ['Tous', 'Faune', 'Paysages', 'Volcans'];
 $filtre_active = isset($_GET['categorie']) ? $_GET['categorie'] : 'Tous';
 
-$filtre_active_lower = mb_strtolower($filtre_active);
+$filtre_active_lower = strtolower($filtre_active);
 $photos_affichees = array_filter($photos, function ($p) use ($filtre_active_lower) {
     if ($filtre_active_lower === 'tous') {
         return true;
     }
-    return mb_strtolower($p['categorie']) === $filtre_active_lower;
+    return strtolower($p['categorie']) === $filtre_active_lower;
 });
 ?>
 
@@ -46,7 +46,7 @@ $photos_affichees = array_filter($photos, function ($p) use ($filtre_active_lowe
     <div class="galerie-filtres-contenu">
         <?php foreach ($filtres as $filtre): ?>
             <a href="?categorie=<?= urlencode($filtre) ?>"
-               class="bouton-filtre <?= mb_strtolower($filtre) === $filtre_active_lower ? 'actif' : '' ?>">
+               class="bouton-filtre <?= strtolower($filtre) === $filtre_active_lower ? 'actif' : '' ?>">
                 <?= htmlspecialchars($filtre) ?>
             </a>
         <?php endforeach; ?>
