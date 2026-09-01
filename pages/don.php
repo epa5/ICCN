@@ -437,16 +437,82 @@ require '../includes/header.php';
         }
     };
 
+    var UNIV_DATA = [];
+    var UNIV_SOURCE = "https://raw.githubusercontent.com/Hipo/university-domains-list/master/world_universities_and_domains.json";
+    var UNIV_HIPOLABS = "http://universities.hipolabs.com/search?country=";
+
+    function correspondancePaysDataset(nomPays) {
+        if (!nomPays) return "";
+        var alias = {
+            "united states": "United States",
+            "united states of america": "United States",
+            "usa": "United States",
+            "democratic republic of the congo": "DR Congo",
+            "congo": "DR Congo",
+            "republic of the congo": "Republic of the Congo",
+            "dr congo": "DR Congo",
+            "south korea": "South Korea",
+            "north korea": "North Korea",
+            "russia": "Russia",
+            "iran": "Iran",
+            "syria": "Syria",
+            "tanzania": "Tanzania",
+            "venezuela": "Venezuela",
+            "vietnam": "Vietnam",
+            "bolivia": "Bolivia",
+            "brunei": "Brunei",
+            "laos": "Laos",
+            "moldova": "Moldova",
+            "czech republic": "Czech Republic",
+            "czechia": "Czech Republic",
+            "macedonia": "Macedonia",
+            "east timor": "East Timor"
+        };
+        var k = (nomPays || "").toLowerCase().trim();
+        if (alias[k]) return alias[k];
+        var trouve = UNIV_DATA.filter(function (u) {
+            return (u.country || "").toLowerCase().trim() === k;
+        })[0];
+        return trouve ? trouve.country : nomPays;
+    }
+
     function chargerUniversites(nomPays) {
         etat.loadingUniversities = true;
         etat.universities = [];
         rendre();
-        fetch("https://universities.hipolabs.com/search?country=" + encodeURIComponent(nomPays))
+        if (UNIV_DATA.length) {
+            remplirUniversites(nomPays);
+            return;
+        }
+        fetch(UNIV_SOURCE)
             .then(function (r) { return r.json(); })
             .then(function (data) {
-                etat.universities = (data || []).map(function (u) {
-                    return { name: u.name };
-                }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+                UNIV_DATA = data || [];
+                remplirUniversites(nomPays);
+            })
+            .catch(function () {
+                setTimeout(function () { chargerUniversitesHipolabs(nomPays); }, 0);
+            });
+    }
+
+    function remplirUniversites(nomPays) {
+        var cible = correspondancePaysDataset(nomPays);
+        var cibleL = (cible || "").toLowerCase().trim();
+        etat.universities = UNIV_DATA
+            .filter(function (u) { return (u.country || "").toLowerCase().trim() === cibleL; })
+            .map(function (u) { return { name: u.name }; })
+            .sort(function (a, b) { return a.name.localeCompare(b.name); });
+        if (!etat.universities.length) chargerUniversitesHipolabs(nomPays);
+        etat.loadingUniversities = false;
+        rendre();
+    }
+
+    function chargerUniversitesHipolabs(nomPays) {
+        fetch(UNIV_HIPOLABS + encodeURIComponent(nomPays))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                etat.universities = (data || []).map(function (u) { return { name: u.name }; })
+                    .sort(function (a, b) { return a.name.localeCompare(b.name); });
                 etat.loadingUniversities = false;
                 rendre();
             })
