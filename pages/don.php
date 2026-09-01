@@ -437,19 +437,8 @@ require '../includes/header.php';
         }
     };
 
-    var UNIV_PAYS = {};                 // cache des universités par pays {pays:[noms]}
-    var UNIV_LOADED = false;
-    var UNIV_HIPOLABS = "https://universities.hipolabs.com/search?country=";
-    var UNIV_MIRROR = "https://rawcdn.githack.com/Hipo/university-domains-list/master/world_universities_and_domains.json";
-
     function normaliserAPI(s) {
         return (s || "").toLowerCase().replace(/[.,]/g, "").replace(/\s+/g, " ").trim();
-    }
-
-    function cleCanonique(s) {
-        var stop = { "the": 1, "of": 1, "and": 1, "is": 1, "in": 1, "do": 1, "da": 1, "de": 1 };
-        var mots = (s || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/);
-        return mots.filter(function (m) { return m && !stop[m]; }).sort().join(" ");
     }
 
     function fetchAvecTimeout(url, ms) {
@@ -464,76 +453,16 @@ require '../includes/header.php';
         etat.loadingUniversities = true;
         etat.universities = [];
         rendre();
-        if (UNIV_LOADED) {
-            remplirDepuisMiroir(nomPays);
-            return;
-        }
-        fetchAvecTimeout(UNIV_HIPOLABS + encodeURIComponent(nomPays), 6000)
+        fetchAvecTimeout("<?php echo $racine; ?>universites_api.php?country=" + encodeURIComponent(nomPays), 12000)
             .then(function (data) {
-                var liste = (data || []).map(function (u) { return u.name; })
-                    .filter(Boolean).sort(function (a, b) { return a.localeCompare(b); });
+                var liste = (data && data.universities) || [];
                 if (liste.length) {
-                    UNIV_PAYS[nomPays] = liste;
                     etat.universities = liste.map(function (n) { return { name: n }; });
-                    etat.loadingUniversities = false;
-                    rendre();
-                } else {
-                    chargerUniversitesMiroir(nomPays);
                 }
-            })
-            .catch(function () { chargerUniversitesMiroir(nomPays); });
-    }
-
-    function chargerUniversitesMiroir(nomPays) {
-        if (UNIV_LOADED) {
-            remplirDepuisMiroir(nomPays);
-            return;
-        }
-        fetchAvecTimeout(UNIV_MIRROR, 25000)
-            .then(function (data) {
-                UNIV_LOADED = true;
-                UNIV_PAYS = {};
-                (data || []).forEach(function (u) {
-                    var c = u.country || "Unknown";
-                    (UNIV_PAYS[c] = UNIV_PAYS[c] || []).push(u.name);
-                });
-                remplirDepuisMiroir(nomPays);
+                etat.loadingUniversities = false;
+                rendre();
             })
             .catch(function () { etat.loadingUniversities = false; rendre(); });
-    }
-
-    function prechargerUniversites() {
-        if (UNIV_LOADED || Object.keys(UNIV_PAYS).length) return;
-        fetchAvecTimeout(UNIV_MIRROR, 30000)
-            .then(function (data) {
-                UNIV_LOADED = true;
-                var pa = {};
-                (data || []).forEach(function (u) {
-                    var c = u.country || "Unknown";
-                    (pa[c] = pa[c] || []).push(u.name);
-                });
-                UNIV_PAYS = pa;
-            })
-            .catch(function () {});
-    }
-
-    function remplirDepuisMiroir(nomPays) {
-        var kc = cleCanonique(nomPays);
-        var cles = Object.keys(UNIV_PAYS);
-        var cle = null, i;
-        for (i = 0; i < cles.length; i++) {
-            if (cleCanonique(cles[i]) === kc) { cle = cles[i]; break; }
-        }
-        if (!cle) {
-            for (i = 0; i < cles.length; i++) {
-                var ci = cleCanonique(cles[i]);
-                if (kc.length >= 3 && (ci.indexOf(kc) !== -1 || kc.indexOf(ci) !== -1)) { cle = cles[i]; break; }
-            }
-        }
-        etat.universities = (UNIV_PAYS[cle] || []).filter(Boolean).sort()
-            .map(function (n) { return { name: n }; });
-        etat.loadingUniversities = false;
-        rendre();
     }
     window.donReinit = function () {
         etat.etape = "form"; etat.erreur = "";
@@ -608,7 +537,6 @@ require '../includes/header.php';
         })
         .catch(function () { etat.loadingCountries = false; rendre(); });
 
-    setTimeout(prechargerUniversites, 1500);
     rendre();
 })();
 </script>
